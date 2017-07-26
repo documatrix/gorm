@@ -646,7 +646,7 @@ func (scope *Scope) buildNotCondition(clause map[string]interface{}) (str string
 			if scanner, ok := interface{}(arg).(driver.Valuer); ok {
 				arg, _ = scanner.Value()
 			}
-			str = strings.Replace(str, "?", scope.AddToVars(arg), 1)
+			str = strings.Replace(notEqualSQL, "?", scope.AddToVars(arg), 1)
 		}
 	}
 	return
@@ -669,7 +669,7 @@ func (scope *Scope) buildSelectQuery(clause map[string]interface{}) (str string)
 			for i := 0; i < values.Len(); i++ {
 				tempMarks = append(tempMarks, scope.AddToVars(values.Index(i).Interface()))
 			}
-            str = strings.Replace(str, "?", strings.Join(tempMarks, ","),  1)
+            str = strings.Replace(str, "?", strings.Join(tempMarks, ","), 1)
 		default:
 			if valuer, ok := interface{}(arg).(driver.Valuer); ok {
 				arg, _ = valuer.Value()

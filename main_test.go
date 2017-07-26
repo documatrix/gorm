@@ -651,8 +651,8 @@ func TestQueryBuilderSubselectInHaving(t *testing.T) {
 		t.Errorf("Two user group should be found, instead found %d", len(users))
     }
 
-	DB.Select("*").Where("age >= ?", DB.
-		Select("AVG(age)").Table("users").Subquery()).Find(&users)
+	DB.Select("*").Where("name LIKE ?", "query_expr_having_%").Where("age >= (?)", DB.
+		Select("AVG(age)").Where("name LIKE ?", "query_expr_having_%").Table("users").QueryExpr()).Find(&users)
 
 	if len(users) != 2 {
 		t.Errorf("Two users should be found, instead found %d", len(users))
