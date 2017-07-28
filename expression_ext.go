@@ -22,6 +22,11 @@ func (db *DB) C(model interface{}, names ...string) string {
 
 func (db *DB) T(model interface{}) string {
 	scope := db.NewScope(model)
+	return scope.TableName()
+}
+
+func (db *DB) QT(model interface{}) string {
+	scope := db.NewScope(model)
 	return scope.QuotedTableName()
 }
 
