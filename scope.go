@@ -544,6 +544,9 @@ func (scope *Scope) buildWhereCondition(clause map[string]interface{}) (str stri
 			}
 		}
 		return strings.Join(sqls, " AND ")
+	case *expr:
+		clause["args"] = []interface{}{value}
+		str = "?"
 	case interface{}:
 		var sqls []string
 		newScope := scope.New(value)
