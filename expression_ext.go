@@ -13,6 +13,18 @@ func (db *DB) L(model interface{}, name string) *expr {
 func (db *DB) C(model interface{}, names ...string) string {
 	columns := make([]string, 0)
 
+	scope := db.NewScope(model)
+	for _, name := range names {
+		field, _ := scope.FieldByName(name)
+		columns = append(columns, field.DBName)
+	}
+
+	return strings.Join(columns, ", ")
+}
+
+func (db *DB) CQ(model interface{}, names ...string) string {
+	columns := make([]string, 0)
+
 	for _, name := range names {
 		columns = append(columns, db.L(model, name).expr)
 	}
