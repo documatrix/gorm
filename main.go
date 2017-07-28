@@ -173,7 +173,7 @@ func (s *DB) Subquery() *expr {
 	scope := s.NewScope(s.Value)
 	scope.prepareQuerySQL()
 
-	return Expr("("+scope.SQL+")", scope.SQLVars...)
+	return Expr(scope.SQL, scope.SQLVars...)
 }
 
 // Where return a new relation, filter records with given conditions, accepts `map`, `struct` or `string` as conditions, refer http://jinzhu.github.io/gorm/crud.html#query

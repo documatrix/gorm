@@ -4,10 +4,6 @@ import (
 	"strings"
 )
 
-func (db *DB) TestExtension() *expr {
-	return &expr{expr: "test"}
-}
-
 func (db *DB) L(model interface{}, name string) *expr {
 	scope := db.NewScope(model)
 	field, _ := scope.FieldByName(name)
@@ -24,61 +20,54 @@ func (db *DB) C(model interface{}, names ...string) string {
 	return strings.Join(columns, ", ")
 }
 
-func (e *expr) Gt(value interface{}) *expr {
-	e.expr = "(" + e.expr + " > ?)"
-	e.args = append(e.args, value)
+func (db *DB) T(model interface{}) string {
+	scope := db.NewScope(model)
+	return scope.QuotedTableName()
+}
+
+func (e *expr) operator(operator string, value interface{}) *expr {
+	e.expr = "(" + e.expr + " " + operator + " ?)"
+	if value != nil {
+		e.args = append(e.args, value)
+	}
 
 	return e
+}
+
+func (e *expr) Gt(value interface{}) *expr {
+	return e.operator(">", value)
 }
 
 func (e *expr) Ge(value interface{}) *expr {
-	e.expr = "(" + e.expr + " >= ?)"
-	e.args = append(e.args, value)
-
-	return e
+	return e.operator(">=", value)
 }
 
 func (e *expr) Lt(value interface{}) *expr {
-	e.expr = "(" + e.expr + " < ?)"
-	e.args = append(e.args, value)
-
-	return e
+	return e.operator("<", value)
 }
 
 func (e *expr) Le(value interface{}) *expr {
-	e.expr = "(" + e.expr + " <= ?)"
-	e.args = append(e.args, value)
-
-	return e
+	return e.operator("<=", value)
 }
 
 func (e *expr) Like(value interface{}) *expr {
-	e.expr = "(" + e.expr + " LIKE ?)"
-	e.args = append(e.args, value)
-
-	return e
+	return e.operator("LIKE", value)
 }
 
 func (e *expr) Eq(value interface{}) *expr {
 	if value == nil {
-		e.expr = "(" + e.expr + " IS NULL)"
-	} else {
-		e.expr = "(" + e.expr + " = ?)"
-		e.args = append(e.args, value)
+		return e.operator("IS NULL", value)
 	}
 
-	return e
+	return e.operator("=", value)
 }
 
 func (e *expr) Neq(value interface{}) *expr {
 	if value == nil {
-		e.expr = "(" + e.expr + " IS NOT NULL)"
-	} else {
-		e.expr = "(" + e.expr + " != ?)"
-		e.args = append(e.args, value)
+		return e.operator("IS NOT NULL", value)
 	}
 
-	return e
+	return e.operator("!=", value)
 }
 
 func (e *expr) In(values ...interface{}) *expr {
@@ -106,4 +95,12 @@ func (e *expr) And(e2 *expr) *expr {
 	e.args = append(e.args, e2.args...)
 
 	return e
+}
+
+func (e *expr) OrderAsc() string {
+	return e.expr + " ASC "
+}
+
+func (e *expr) OrderDesc() string {
+	return e.expr + " DESC "
 }
