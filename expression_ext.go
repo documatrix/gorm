@@ -31,14 +31,18 @@ func (db *DB) QT(model interface{}) string {
 }
 
 func (e *expr) operator(operator string, value interface{}) *expr {
+	if value == nil {
+		e.expr = "(" + e.expr + " " + operator + " )"
+		return e
+	}
+
 	if _, ok := value.(*expr); ok {
 		e.expr = "(" + e.expr + " " + operator + " (?))"
 	} else {
 		e.expr = "(" + e.expr + " " + operator + " ?)"
 	}
-	if value != nil {
-		e.args = append(e.args, value)
-	}
+
+	e.args = append(e.args, value)
 
 	return e
 }
