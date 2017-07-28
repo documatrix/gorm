@@ -560,7 +560,7 @@ func (scope *Scope) buildWhereCondition(clause map[string]interface{}) (str stri
 		switch reflect.ValueOf(arg).Kind() {
 		case reflect.Slice: // For where("id in (?)", []int64{1,2})
 			if bytes, ok := arg.([]byte); ok {
-				str = strings.Replace(str, "?", scope.AddToVars(bytes), 1)
+                str = strings.Replace(str, "?", scope.AddToVars(bytes), 1)
 			} else if values := reflect.ValueOf(arg); values.Len() > 0 {
 				var tempMarks []string
 				for i := 0; i < values.Len(); i++ {
@@ -646,7 +646,7 @@ func (scope *Scope) buildNotCondition(clause map[string]interface{}) (str string
 			if scanner, ok := interface{}(arg).(driver.Valuer); ok {
 				arg, _ = scanner.Value()
 			}
-			str = strings.Replace(notEqualSQL, "?", scope.AddToVars(arg), 1)
+			str = strings.Replace(str, "?", scope.AddToVars(arg), 1)
 		}
 	}
 	return
@@ -669,7 +669,7 @@ func (scope *Scope) buildSelectQuery(clause map[string]interface{}) (str string)
 			for i := 0; i < values.Len(); i++ {
 				tempMarks = append(tempMarks, scope.AddToVars(values.Index(i).Interface()))
 			}
-			str = strings.Replace(str, "?", strings.Join(tempMarks, ","), 1)
+            str = strings.Replace(str, "=", strings.Join(tempMarks, ","),  1)
 		default:
 			if valuer, ok := interface{}(arg).(driver.Valuer); ok {
 				arg, _ = valuer.Value()
@@ -767,7 +767,6 @@ func (scope *Scope) orderSQL() string {
 	}
 	return " ORDER BY " + strings.Join(orders, ",")
 }
-
 func (scope *Scope) limitAndOffsetSQL() string {
 	return scope.Dialect().LimitAndOffsetSQL(scope.Search.limit, scope.Search.offset)
 }
