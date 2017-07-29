@@ -1,6 +1,7 @@
 package gorm
 
 import (
+	"reflect"
 	"strings"
 )
 
@@ -128,4 +129,14 @@ func (e *expr) OrderAsc() string {
 
 func (e *expr) OrderDesc() string {
 	return e.expr + " DESC "
+}
+
+func (db *DB) UpdateFields(fields ...string) *DB {
+	sets := make(map[string]interface{})
+	m := reflect.ValueOf(db.Value).Elem()
+	for _, field := range fields {
+		sets[db.C(db.Value, field)] = m.FieldByName(field).Interface()
+	}
+
+	return db.Update(sets)
 }
