@@ -11,14 +11,18 @@ type lexpr struct {
 
 type jexpr struct {
 	expr string
+	args []interface{}
 }
 
 func (db *DB) InnerJoin(model interface{}) *jexpr {
-	return &jexpr{"INNER JOIN " + db.T(model)}
+	if val, ok := model.(*expr); ok {
+		return &jexpr{expr: " INNER JOIN (" + val.expr + ")", args: val.args}
+	}
+	return &jexpr{expr: " INNER JOIN " + db.T(model)}
 }
 
-func (je *jexpr) On(col1 *lexpr, col2 *lexpr) string {
-	return je.expr + " ON " + col1.expr + " = " + col2.expr
+func (je *jexpr) On(col1 *lexpr, col2 *lexpr) *expr {
+	return &expr{expr: je.expr + " ON " + col1.expr + " = " + col2.expr, args: je.args}
 }
 
 func (db *DB) L(model interface{}, name string) *lexpr {
