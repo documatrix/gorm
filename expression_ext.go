@@ -65,13 +65,14 @@ func (db *DB) QT(model interface{}) string {
 
 func (e *lexpr) operator(operator string, value interface{}) *expr {
 	if value == nil {
-		e.expr = "(" + e.expr + " " + operator + " )"
-		return &expr{expr: e.expr}
+		return &expr{expr: "(" + e.expr + " " + operator + " )"}
 	}
 
 	if val, ok := value.(*lexpr); ok {
-		e.expr = "(" + e.expr + " " + operator + " " + val.expr + ")"
-	} else if _, ok := value.(*expr); ok {
+		return &expr{expr: "(" + e.expr + " " + operator + " " + val.expr + ")"}
+	}
+
+	if _, ok := value.(*expr); ok {
 		e.expr = "(" + e.expr + " " + operator + " (?))"
 	} else {
 		e.expr = "(" + e.expr + " " + operator + " ?)"
