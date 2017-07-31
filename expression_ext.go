@@ -93,7 +93,9 @@ func (e *lexpr) operator(operator string, value interface{}) *expr {
 		return &expr{expr: "(" + e.expr + " " + operator + " " + val.expr + ")"}
 	}
 
-	if _, ok := value.(*expr); ok {
+	if val, ok := value.(*lexpr); ok {
+		e.expr = "(" + e.expr + " " + operator + " " + val.expr + ")"
+	} else if _, ok := value.(*expr); ok {
 		e.expr = "(" + e.expr + " " + operator + " (?))"
 	} else {
 		e.expr = "(" + e.expr + " " + operator + " ?)"
@@ -199,12 +201,3 @@ func (e *expr) Alias(alias string) *expr {
 	return e
 }
 
-func (db *DB) UpdateFields(fields ...string) *DB {
-	sets := make(map[string]interface{})
-	m := reflect.ValueOf(db.Value).Elem()
-	for _, field := range fields {
-		sets[db.C(db.Value, field)] = m.FieldByName(field).Interface()
-	}
-
-	return db.Update(sets)
-}
