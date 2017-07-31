@@ -5,10 +5,26 @@ import (
 	"strings"
 )
 
-func (db *DB) L(model interface{}, name string) *expr {
+type lexpr struct {
+	expr string
+}
+
+type jexpr struct {
+	expr string
+}
+
+func (db *DB) InnerJoin(model interface{}) *jexpr {
+	return &jexpr{"INNER JOIN " + db.T(model)}
+}
+
+func (je *jexpr) On(col1 *lexpr, col2 *lexpr) string {
+	return je.expr + " ON " + col1.expr + " = " + col2.expr
+}
+
+func (db *DB) L(model interface{}, name string) *lexpr {
 	scope := db.NewScope(model)
 	field, _ := scope.FieldByName(name)
-	return &expr{expr: scope.Quote(scope.TableName()) + "." + scope.Quote(field.DBName)}
+	return &lexpr{expr: scope.Quote(scope.TableName()) + "." + scope.Quote(field.DBName)}
 }
 
 func (db *DB) C(model interface{}, names ...string) string {
@@ -43,44 +59,44 @@ func (db *DB) QT(model interface{}) string {
 	return scope.QuotedTableName()
 }
 
-func (e *expr) operator(operator string, value interface{}) *expr {
+func (e *lexpr) operator(operator string, value interface{}) *expr {
 	if value == nil {
 		e.expr = "(" + e.expr + " " + operator + " )"
-		return e
+		return &expr{expr: e.expr}
 	}
 
-	if _, ok := value.(*expr); ok {
+	if val, ok := value.(*lexpr); ok {
+		e.expr = "(" + e.expr + " " + operator + " " + val.expr + ")"
+	} else if _, ok := value.(*expr); ok {
 		e.expr = "(" + e.expr + " " + operator + " (?))"
 	} else {
 		e.expr = "(" + e.expr + " " + operator + " ?)"
 	}
 
-	e.args = append(e.args, value)
-
-	return e
+	return &expr{expr: e.expr, args: append(make([]interface{}, 0), value)}
 }
 
-func (e *expr) Gt(value interface{}) *expr {
+func (e *lexpr) Gt(value interface{}) *expr {
 	return e.operator(">", value)
 }
 
-func (e *expr) Ge(value interface{}) *expr {
+func (e *lexpr) Ge(value interface{}) *expr {
 	return e.operator(">=", value)
 }
 
-func (e *expr) Lt(value interface{}) *expr {
+func (e *lexpr) Lt(value interface{}) *expr {
 	return e.operator("<", value)
 }
 
-func (e *expr) Le(value interface{}) *expr {
+func (e *lexpr) Le(value interface{}) *expr {
 	return e.operator("<=", value)
 }
 
-func (e *expr) Like(value interface{}) *expr {
+func (e *lexpr) Like(value interface{}) *expr {
 	return e.operator("LIKE", value)
 }
 
-func (e *expr) Eq(value interface{}) *expr {
+func (e *lexpr) Eq(value interface{}) *expr {
 	if value == nil {
 		return e.operator("IS NULL", value)
 	}
@@ -88,7 +104,7 @@ func (e *expr) Eq(value interface{}) *expr {
 	return e.operator("=", value)
 }
 
-func (e *expr) Neq(value interface{}) *expr {
+func (e *lexpr) Neq(value interface{}) *expr {
 	if value == nil {
 		return e.operator("IS NOT NULL", value)
 	}
@@ -96,17 +112,22 @@ func (e *expr) Neq(value interface{}) *expr {
 	return e.operator("!=", value)
 }
 
-func (e *expr) In(values ...interface{}) *expr {
+func (e *lexpr) In(values ...interface{}) *expr {
 	// NOTE: Maybe there is a better way to do this? :)
 	qm := make([]string, len(values))
 	for i := 0; i < len(values); i++ {
 		qm[i] = "?"
 	}
 
-	e.expr = "(" + e.expr + " IN (" + strings.Join(qm, ",") + "))"
-	e.args = append(e.args, values...)
+	return &expr{expr: "(" + e.expr + " IN (" + strings.Join(qm, ",") + "))", args: append(make([]interface{}, 0), values...)}
+}
 
-	return e
+func (e *lexpr) OrderAsc() string {
+	return e.expr + " ASC "
+}
+
+func (e *lexpr) OrderDesc() string {
+	return e.expr + " DESC "
 }
 
 func (e *expr) Or(e2 *expr) *expr {
@@ -123,14 +144,6 @@ func (e *expr) And(e2 *expr) *expr {
 	return e
 }
 
-func (e *expr) OrderAsc() string {
-	return e.expr + " ASC "
-}
-
-func (e *expr) OrderDesc() string {
-	return e.expr + " DESC "
-}
-
 func (db *DB) UpdateFields(fields ...string) *DB {
 	sets := make(map[string]interface{})
 	m := reflect.ValueOf(db.Value).Elem()
@@ -139,4 +152,11 @@ func (db *DB) UpdateFields(fields ...string) *DB {
 	}
 
 	return db.Update(sets)
+}
+
+func (e *expr) Intersect(e2 *expr) *expr {
+	e.expr = "((" + e.expr + ") INTERSECT (" + e2.expr + "))"
+	e.args = append(e.args, e2.args...)
+
+	return e
 }
