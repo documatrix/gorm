@@ -233,7 +233,7 @@ func (s *DB) Having(query interface{}, values ...interface{}) *DB {
 
 // Joins specify Joins conditions
 //     db.Joins("JOIN emails ON emails.user_id = users.id AND emails.email = ?", "jinzhu@example.org").Find(&user)
-func (s *DB) Joins(query string, args ...interface{}) *DB {
+func (s *DB) Joins(query interface{}, args ...interface{}) *DB {
 	return s.clone().search.Joins(query, args...).db
 }
 
