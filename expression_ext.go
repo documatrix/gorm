@@ -93,9 +93,7 @@ func (e *lexpr) operator(operator string, value interface{}) *expr {
 		return &expr{expr: "(" + e.expr + " " + operator + " " + val.expr + ")"}
 	}
 
-	if val, ok := value.(*lexpr); ok {
-		e.expr = "(" + e.expr + " " + operator + " " + val.expr + ")"
-	} else if _, ok := value.(*expr); ok {
+	if _, ok := value.(*expr); ok {
 		e.expr = "(" + e.expr + " " + operator + " (?))"
 	} else {
 		e.expr = "(" + e.expr + " " + operator + " ?)"
