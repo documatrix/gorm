@@ -140,6 +140,7 @@ func (scope *Scope) FieldByName(name string) (field *Field, ok bool) {
 		if field.Name == name || field.DBName == name {
 			return field, true
 		}
+
 		if field.DBName == dbName {
 			mostMatchedField = field
 		}
