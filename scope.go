@@ -639,7 +639,7 @@ func (scope *Scope) buildNotCondition(clause map[string]interface{}) (str string
 		switch reflect.ValueOf(arg).Kind() {
 		case reflect.Slice: // For where("id in (?)", []int64{1,2})
 			if bytes, ok := arg.([]byte); ok {
-				str = strings.Replace(str, "?", scope.AddToVars(bytes), 1)
+                str = strings.Replace(str, "?", scope.AddToVars(bytes), 1)
 			} else if values := reflect.ValueOf(arg); values.Len() > 0 {
 				var tempMarks []string
 				for i := 0; i < values.Len(); i++ {
@@ -1015,7 +1015,7 @@ func (scope *Scope) related(value interface{}, foreignKeys ...string) *Scope {
 	toScope := scope.db.NewScope(value)
 	tx := scope.db.Set("gorm:association:source", scope.Value)
 
-	for _, foreignKey := range append(foreignKeys, toScope.typeName()+"Id", scope.typeName()+"Id") {
+	for _, foreignKey := range append(foreignKeys, toScope.typeName()+"ID", scope.typeName()+"ID", toScope.typeName()+"Id", scope.typeName()+"Id") {
 		fromField, _ := scope.FieldByName(foreignKey)
 		toField, _ := toScope.FieldByName(foreignKey)
 

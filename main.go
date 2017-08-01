@@ -169,10 +169,14 @@ func (s *DB) NewScope(value interface{}) *Scope {
 }
 
 // QueryExpr returns the query as expr object
-func (s *DB) QueryExpr() *expr {
+func (s *DB) QueryExpr(alias ...string) *expr {
 	scope := s.NewScope(s.Value)
 	scope.InstanceSet("skip_bindvar", true)
 	scope.prepareQuerySQL()
+
+	if len(alias) > 0 {
+		return Expr("( "+scope.SQL+" ) "+alias[0]+" ", scope.SQLVars...)
+	}
 
 	return Expr(scope.SQL, scope.SQLVars...)
 }

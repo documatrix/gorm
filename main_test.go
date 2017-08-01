@@ -631,6 +631,7 @@ func TestQueryBuilderSubselectInWhere(t *testing.T) {
 	if len(users) != 2 {
 		t.Errorf("Two users should be found, instead found %d", len(users))
 	}
+	DB.Delete(&User{})
 }
 
 func TestQueryBuilderSubselectInHaving(t *testing.T) {
@@ -657,6 +658,7 @@ func TestQueryBuilderSubselectInHaving(t *testing.T) {
 	if len(users) != 2 {
 		t.Errorf("Two users should be found, instead found %d", len(users))
 	}
+	DB.Delete(&User{})
 }
 
 func DialectHasTzSupport() bool {
