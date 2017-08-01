@@ -304,6 +304,10 @@ type tabler interface {
 	TableName() string
 }
 
+type columnPrefixer interface {
+	ColumnPrefix() string
+}
+
 type dbTabler interface {
 	TableName(*DB) string
 }
