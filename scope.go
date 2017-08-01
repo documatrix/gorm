@@ -456,7 +456,6 @@ var (
 	isNumberRegexp      = regexp.MustCompile("^\\s*\\d+\\s*$")                   // match if string is number
 	comparisonRegexp    = regexp.MustCompile("(?i) (=|<>|>|<|LIKE|IS|IN) ")
 	countingQueryRegexp = regexp.MustCompile("(?i)^count(.+)$")
-	pgParameterRegexp   = regexp.MustCompile(`\$[0-9]+`) // to exchange postgres `$1` style parameter placeholders
 )
 
 func (scope *Scope) quoteIfPossible(str string) string {
@@ -467,9 +466,6 @@ func (scope *Scope) quoteIfPossible(str string) string {
 }
 
 func (scope *Scope) replaceParameterPlaceholderLiteral(sql string, parameter interface{}, addToVars bool) string {
-	if scope.Dialect().GetName() == "postgres" && pgParameterRegexp.MatchString(sql) {
-		sql = pgParameterRegexp.ReplaceAllLiteralString(sql, "?")
-	}
 	if val, ok := parameter.(string); ok && !addToVars {
 		return strings.Replace(sql, "?", val, 1)
 	}

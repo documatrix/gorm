@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -169,11 +170,25 @@ func (s *DB) NewScope(value interface{}) *Scope {
 }
 
 // Subquery returns the query as eprx object
-func (s *DB) Subquery() *expr {
+func (s *DB) Subquery(alias ...string) *expr {
+	var (
+		pgParameterRegexp = regexp.MustCompile(`\$[0-9]+`) // to exchange postgres `$1` style parameter placeholders
+	)
+
 	scope := s.NewScope(s.Value)
 	scope.prepareQuerySQL()
 
-	return Expr(scope.SQL, scope.SQLVars...)
+	sql := scope.SQL
+
+	if scope.Dialect().GetName() == "postgres" && pgParameterRegexp.MatchString(sql) {
+		sql = pgParameterRegexp.ReplaceAllLiteralString(sql, "?")
+	}
+
+	if len(alias) > 0 {
+		return Expr("( "+sql+" ) "+alias[0]+" ", scope.SQLVars...)
+	}
+
+	return Expr(sql, scope.SQLVars...)
 }
 
 // Where return a new relation, filter records with given conditions, accepts `map`, `struct` or `string` as conditions, refer http://jinzhu.github.io/gorm/crud.html#query

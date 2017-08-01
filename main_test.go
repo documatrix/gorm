@@ -608,48 +608,52 @@ func TestHaving(t *testing.T) {
 }
 
 func TestQueryBuilderSubselectInWhere(t *testing.T) {
-	user := User{Name: "user1", Email: "root@user1.com", Age: 32}
+	DB.Delete(&User{})
+	user := User{Name: "user1888", Email: "root@user1.com", Age: 32}
 	DB.Save(&user)
-	user = User{Name: "user2", Email: "nobody@user2.com", Age: 16}
+	user = User{Name: "user2888", Email: "nobody@user2.com", Age: 16}
 	DB.Save(&user)
-	user = User{Name: "user3", Email: "root@user3.com", Age: 64}
+	user = User{Name: "user3888", Email: "root@user3.com", Age: 64}
 	DB.Save(&user)
-	user = User{Name: "user4", Email: "somebody@user3.com", Age: 128}
+	user = User{Name: "user4888", Email: "somebody@user3.com", Age: 128}
 	DB.Save(&user)
 
 	var users []User
-	DB.Select("*").Where("name IN ?", DB.
+	DB.Select("*").Where("name IN (?)", DB.
 		Select("name").Table("users").Where("email LIKE ?", "root@%").Subquery()).Find(&users)
 
 	if len(users) != 2 {
 		t.Errorf("Two users should be found, instead found %d", len(users))
 	}
 
-	DB.Select("*").Where("age >= ?", DB.
+	DB.Select("*").Where("age >= (?)", DB.
 		Select("AVG(age)").Table("users").Subquery()).Find(&users)
 
 	if len(users) != 2 {
 		t.Errorf("Two users should be found, instead found %d", len(users))
 	}
+	DB.Delete(&User{})
 }
 
 func TestQueryBuilderSubselectInHaving(t *testing.T) {
-	user := User{Name: "user1", Email: "root@user1.com", Age: 64}
+	DB.Delete(&User{})
+	user := User{Name: "user1999", Email: "root@user1.com", Age: 64}
 	DB.Save(&user)
-	user = User{Name: "user2", Email: "root@user2.com", Age: 128}
+	user = User{Name: "user2999", Email: "root@user2.com", Age: 128}
 	DB.Save(&user)
-	user = User{Name: "user3", Email: "root@user1.com", Age: 64}
+	user = User{Name: "user3999", Email: "root@user1.com", Age: 64}
 	DB.Save(&user)
-	user = User{Name: "user4", Email: "root@user2.com", Age: 128}
+	user = User{Name: "user4999", Email: "root@user2.com", Age: 128}
 	DB.Save(&user)
 
 	var users []User
-	DB.Debug().Select("AVG(age) as avgage").Group("email").Having("avgage > ?", DB.
+	DB.Select("AVG(age) as avgage").Group("email").Having("avgage > (?)", DB.
 		Select("AVG(age)").Table("users").Subquery()).Find(&users)
 
 	if len(users) != 1 {
 		t.Errorf("One user group should be found, instead found %d", len(users))
 	}
+	DB.Delete(&User{})
 }
 
 func DialectHasTzSupport() bool {

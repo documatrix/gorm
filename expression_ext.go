@@ -14,11 +14,16 @@ type jexpr struct {
 	args []interface{}
 }
 
-func (db *DB) InnerJoin(model interface{}) *jexpr {
-	if val, ok := model.(*expr); ok {
-		return &jexpr{expr: " INNER JOIN (" + val.expr + ")", args: val.args}
+func (db *DB) InnerJoin(model interface{}, alias ...string) *jexpr {
+	var al string
+	if len(alias) > 0 {
+		al = alias[0]
 	}
-	return &jexpr{expr: " INNER JOIN " + db.T(model)}
+
+	if val, ok := model.(*expr); ok {
+		return &jexpr{expr: " INNER JOIN (" + val.expr + ") " + al, args: val.args}
+	}
+	return &jexpr{expr: " INNER JOIN " + db.T(model) + " " + al}
 }
 
 func (je *jexpr) On(col1 *lexpr, col2 *lexpr) *expr {
@@ -31,6 +36,12 @@ func (db *DB) L(model interface{}, name string) *lexpr {
 	return &lexpr{expr: scope.Quote(scope.TableName()) + "." + scope.Quote(field.DBName)}
 }
 
+func (db *DB) LA(model interface{}, alias string, name string) *lexpr {
+	scope := db.NewScope(model)
+	field, _ := scope.FieldByName(name)
+	return &lexpr{expr: scope.Quote(alias) + "." + scope.Quote(field.DBName)}
+}
+
 func (db *DB) C(model interface{}, names ...string) string {
 	columns := make([]string, 0)
 
@@ -38,6 +49,16 @@ func (db *DB) C(model interface{}, names ...string) string {
 	for _, name := range names {
 		field, _ := scope.FieldByName(name)
 		columns = append(columns, field.DBName)
+	}
+
+	return strings.Join(columns, ", ")
+}
+
+func (db *DB) CA(model interface{}, alias string, names ...string) string {
+	columns := make([]string, 0)
+
+	for _, name := range names {
+		columns = append(columns, db.LA(model, alias, name).expr)
 	}
 
 	return strings.Join(columns, ", ")
@@ -162,6 +183,18 @@ func (db *DB) UpdateFields(fields ...string) *DB {
 func (e *expr) Intersect(e2 *expr) *expr {
 	e.expr = "((" + e.expr + ") INTERSECT (" + e2.expr + "))"
 	e.args = append(e.args, e2.args...)
+
+	return e
+}
+
+func (e *lexpr) Alias(alias string) *lexpr {
+	e.expr = e.expr + " " + alias + " "
+
+	return e
+}
+
+func (e *expr) Alias(alias string) *expr {
+	e.expr = e.expr + " " + alias + " "
 
 	return e
 }
