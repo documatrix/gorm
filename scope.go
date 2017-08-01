@@ -140,6 +140,7 @@ func (scope *Scope) FieldByName(name string) (field *Field, ok bool) {
 		if field.Name == name || field.DBName == name {
 			return field, true
 		}
+
 		if field.DBName == dbName {
 			mostMatchedField = field
 		}
@@ -1018,7 +1019,7 @@ func (scope *Scope) related(value interface{}, foreignKeys ...string) *Scope {
 	toScope := scope.db.NewScope(value)
 	tx := scope.db.Set("gorm:association:source", scope.Value)
 
-	for _, foreignKey := range append(foreignKeys, toScope.typeName()+"Id", scope.typeName()+"Id") {
+	for _, foreignKey := range append(foreignKeys, toScope.typeName()+"ID", scope.typeName()+"ID", toScope.typeName()+"Id", scope.typeName()+"Id") {
 		fromField, _ := scope.FieldByName(foreignKey)
 		toField, _ := toScope.FieldByName(foreignKey)
 
