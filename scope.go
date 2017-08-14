@@ -477,6 +477,18 @@ func (scope *Scope) quoteIfPossible(str string) string {
 	return str
 }
 
+func (scope *Scope) replaceParameterPlaceholderLiteral(sql string, parameter interface{}, addToVars bool) string {
+	if val, ok := parameter.(string); ok && !addToVars {
+		return strings.Replace(sql, "?", val, 1)
+	}
+
+	return strings.Replace(sql, "?", scope.AddToVars(parameter), 1)
+}
+
+func (scope *Scope) replaceParameterPlaceholder(sql string, parameter interface{}) string {
+	return scope.replaceParameterPlaceholderLiteral(sql, parameter, true)
+}
+
 func (scope *Scope) scan(rows *sql.Rows, columns []string, fields []*Field) {
 	var (
 		ignored            interface{}
