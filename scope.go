@@ -273,6 +273,7 @@ func (scope *Scope) AddToVars(value interface{}) string {
 	if skipBindVar {
 		return "?"
 	}
+
 	return scope.Dialect().BindVar(len(scope.SQLVars))
 }
 
@@ -342,7 +343,7 @@ func (scope *Scope) QuotedTableName() (name string) {
 	return scope.Quote(scope.TableName())
 }
 
-// CombinedConditionSql return combined condition sql
+// CombinedConditionSQL return combined condition SQL
 func (scope *Scope) CombinedConditionSql() string {
 	joinSQL := scope.joinsSQL()
 	whereSQL := scope.whereSQL()
