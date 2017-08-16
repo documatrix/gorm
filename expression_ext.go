@@ -14,16 +14,32 @@ type jexpr struct {
 	args []interface{}
 }
 
-func (db *DB) InnerJoin(model interface{}, alias ...string) *jexpr {
+func join(joinType string, db *DB, model interface{}, alias ...string) *jexpr {
 	var al string
 	if len(alias) > 0 {
 		al = alias[0]
 	}
 
 	if val, ok := model.(*expr); ok {
-		return &jexpr{expr: " INNER JOIN (" + val.expr + ") " + al, args: val.args}
+		return &jexpr{expr: " " + joinType + " JOIN (" + val.expr + ") " + al, args: val.args}
 	}
-	return &jexpr{expr: " INNER JOIN " + db.T(model) + " " + al}
+	return &jexpr{expr: " " + joinType + " JOIN " + db.T(model) + " " + al}
+}
+
+func (db *DB) InnerJoin(model interface{}, alias ...string) *jexpr {
+	return join("INNER", db, model, alias...)
+}
+
+func (db *DB) LeftJoin(model interface{}, alias ...string) *jexpr {
+	return join("LEFT", db, model, alias...)
+}
+
+func (db *DB) RightJoin(model interface{}, alias ...string) *jexpr {
+	return join("RIGHT", db, model, alias...)
+}
+
+func (db *DB) OuterJoin(model interface{}, alias ...string) *jexpr {
+	return join("OUTER", db, model, alias...)
 }
 
 func (je *jexpr) On(col1 *lexpr, col2 *lexpr) *expr {
