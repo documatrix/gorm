@@ -156,6 +156,20 @@ func (e *lexpr) Neq(value interface{}) *expr {
 
 func (e *lexpr) In(values ...interface{}) *expr {
 	// NOTE: Maybe there is a better way to do this? :)
+	if len(values) == 1 {
+		if s := reflect.ValueOf(values[0]); s.Kind() == reflect.Slice {
+			vals := make([]interface{}, s.Len())
+			qm := make([]string, s.Len())
+
+			for i := 0; i < s.Len(); i++ {
+				vals[i] = s.Index(i).Interface()
+				qm[i] = "?"
+			}
+
+			return &expr{expr: "(" + e.expr + " IN (" + strings.Join(qm, ",") + "))", args: vals}
+		}
+	}
+
 	qm := make([]string, len(values))
 	for i := 0; i < len(values); i++ {
 		qm[i] = "?"
