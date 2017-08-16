@@ -180,6 +180,12 @@ func (db *DB) UpdateFields(fields ...string) *DB {
 	return db.Update(sets)
 }
 
+func (db *DB) SelectFields(fields ...string) *DB {
+	selects := strings.Join(fields, ", ")
+
+	return db.Select(selects)
+}
+
 func (e *expr) Intersect(e2 *expr) *expr {
 	e.expr = "((" + e.expr + ") INTERSECT (" + e2.expr + "))"
 	e.args = append(e.args, e2.args...)
