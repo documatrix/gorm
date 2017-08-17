@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-type lexpr struct {
+type LExpr struct {
 	expr string
 }
 
@@ -42,20 +42,20 @@ func (db *DB) OuterJoin(model interface{}, alias ...string) *jexpr {
 	return join("OUTER", db, model, alias...)
 }
 
-func (je *jexpr) On(col1 *lexpr, col2 *lexpr) *expr {
+func (je *jexpr) On(col1 *LExpr, col2 *LExpr) *expr {
 	return &expr{expr: je.expr + " ON " + col1.expr + " = " + col2.expr, args: je.args}
 }
 
-func (db *DB) L(model interface{}, name string) *lexpr {
+func (db *DB) L(model interface{}, name string) *LExpr {
 	scope := db.NewScope(model)
 	field, _ := scope.FieldByName(name)
-	return &lexpr{expr: scope.Quote(scope.TableName()) + "." + scope.Quote(field.DBName)}
+	return &LExpr{expr: scope.Quote(scope.TableName()) + "." + scope.Quote(field.DBName)}
 }
 
-func (db *DB) LA(model interface{}, alias string, name string) *lexpr {
+func (db *DB) LA(model interface{}, alias string, name string) *LExpr {
 	scope := db.NewScope(model)
 	field, _ := scope.FieldByName(name)
-	return &lexpr{expr: scope.Quote(alias) + "." + scope.Quote(field.DBName)}
+	return &LExpr{expr: scope.Quote(alias) + "." + scope.Quote(field.DBName)}
 }
 
 func (db *DB) C(model interface{}, names ...string) string {
@@ -100,12 +100,12 @@ func (db *DB) QT(model interface{}) string {
 	return scope.QuotedTableName()
 }
 
-func (e *lexpr) operator(operator string, value interface{}) *expr {
+func (e *LExpr) operator(operator string, value interface{}) *expr {
 	if value == nil {
 		return &expr{expr: "(" + e.expr + " " + operator + " )"}
 	}
 
-	if val, ok := value.(*lexpr); ok {
+	if val, ok := value.(*LExpr); ok {
 		return &expr{expr: "(" + e.expr + " " + operator + " " + val.expr + ")"}
 	}
 
@@ -118,27 +118,27 @@ func (e *lexpr) operator(operator string, value interface{}) *expr {
 	return &expr{expr: e.expr, args: append(make([]interface{}, 0), value)}
 }
 
-func (e *lexpr) Gt(value interface{}) *expr {
+func (e *LExpr) Gt(value interface{}) *expr {
 	return e.operator(">", value)
 }
 
-func (e *lexpr) Ge(value interface{}) *expr {
+func (e *LExpr) Ge(value interface{}) *expr {
 	return e.operator(">=", value)
 }
 
-func (e *lexpr) Lt(value interface{}) *expr {
+func (e *LExpr) Lt(value interface{}) *expr {
 	return e.operator("<", value)
 }
 
-func (e *lexpr) Le(value interface{}) *expr {
+func (e *LExpr) Le(value interface{}) *expr {
 	return e.operator("<=", value)
 }
 
-func (e *lexpr) Like(value interface{}) *expr {
+func (e *LExpr) Like(value interface{}) *expr {
 	return e.operator("LIKE", value)
 }
 
-func (e *lexpr) Eq(value interface{}) *expr {
+func (e *LExpr) Eq(value interface{}) *expr {
 	if value == nil {
 		return e.operator("IS NULL", value)
 	}
@@ -146,7 +146,7 @@ func (e *lexpr) Eq(value interface{}) *expr {
 	return e.operator("=", value)
 }
 
-func (e *lexpr) Neq(value interface{}) *expr {
+func (e *LExpr) Neq(value interface{}) *expr {
 	if value == nil {
 		return e.operator("IS NOT NULL", value)
 	}
@@ -154,7 +154,7 @@ func (e *lexpr) Neq(value interface{}) *expr {
 	return e.operator("!=", value)
 }
 
-func (e *lexpr) In(values ...interface{}) *expr {
+func (e *LExpr) In(values ...interface{}) *expr {
 	// NOTE: Maybe there is a better way to do this? :)
 	if len(values) == 1 {
 		if s := reflect.ValueOf(values[0]); s.Kind() == reflect.Slice {
@@ -178,11 +178,11 @@ func (e *lexpr) In(values ...interface{}) *expr {
 	return &expr{expr: "(" + e.expr + " IN (" + strings.Join(qm, ",") + "))", args: append(make([]interface{}, 0), values...)}
 }
 
-func (e *lexpr) OrderAsc() string {
+func (e *LExpr) OrderAsc() string {
 	return e.expr + " ASC "
 }
 
-func (e *lexpr) OrderDesc() string {
+func (e *LExpr) OrderDesc() string {
 	return e.expr + " DESC "
 }
 
@@ -223,7 +223,7 @@ func (e *expr) Intersect(e2 *expr) *expr {
 	return e
 }
 
-func (e *lexpr) Alias(alias string) *lexpr {
+func (e *LExpr) Alias(alias string) *LExpr {
 	e.expr = e.expr + " " + alias + " "
 
 	return e
