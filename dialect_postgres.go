@@ -128,3 +128,20 @@ func isUUID(value reflect.Value) bool {
 	lower := strings.ToLower(typename)
 	return "uuid" == lower || "guid" == lower
 }
+
+func (postgres) FormateDate(e *expr, format string) *expr {
+	mapping := map[rune]string{
+		'y': "YYYY",
+		'm': "MM",
+		'w': "WW",
+		'd': "DD",
+		'D': "D",
+		'h': "HH24",
+		'M': "MI",
+		's': "SS",
+	}
+	parsedFormat := parseDateFormat(format, mapping)
+
+	e.expr = "(to_char(" + e.expr + ", " + parsedFormat + "))"
+	return e
+}

@@ -234,3 +234,11 @@ func (e *expr) Alias(alias string) *expr {
 
 	return e
 }
+
+func (db *DB) FormatDate(e *expr, format string) *expr {
+	return db.Dialect().FormatDate(e, format)
+}
+
+func (db *DB) FormatDateColumn(l *LExpr, format string) string {
+	return db.FormatDate(&expr{expr: l.expr}, format).expr
+}

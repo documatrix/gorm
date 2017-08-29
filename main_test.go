@@ -650,7 +650,7 @@ func TestQueryBuilderSubselectInHaving(t *testing.T) {
 
 	if len(users) != 1 {
 		t.Errorf("Two user group should be found, instead found %d", len(users))
-    }
+	}
 
 	DB.Select("*").Where("name LIKE ?", "query_expr_having_%").Where("age >= (?)", DB.
 		Select("AVG(age)").Where("name LIKE ?", "query_expr_having_%").Table("users").QueryExpr()).Find(&users)
@@ -671,7 +671,7 @@ func DialectHasTzSupport() bool {
 
 func TestTimeWithZone(t *testing.T) {
 	var format = "2006-01-02 15:04:05 -0700"
-    var times []time.Time
+	var times []time.Time
 	GMT8, _ := time.LoadLocation("Asia/Shanghai")
 	times = append(times, time.Date(2013, 02, 19, 1, 51, 49, 123456789, GMT8))
 	times = append(times, time.Date(2013, 02, 18, 17, 51, 49, 123456789, time.UTC))
