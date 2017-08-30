@@ -129,7 +129,7 @@ func isUUID(value reflect.Value) bool {
 	return "uuid" == lower || "guid" == lower
 }
 
-func (postgres) FormateDate(e *expr, format string) *expr {
+func (postgres) FormatDate(e *expr, format string) *expr {
 	mapping := map[rune]string{
 		'y': "YYYY",
 		'm': "MM",
@@ -142,6 +142,6 @@ func (postgres) FormateDate(e *expr, format string) *expr {
 	}
 	parsedFormat := parseDateFormat(format, mapping)
 
-	e.expr = "(to_char(" + e.expr + ", " + parsedFormat + "))"
+	e.expr = "(to_char(" + e.expr + ", '" + parsedFormat + "'))"
 	return e
 }

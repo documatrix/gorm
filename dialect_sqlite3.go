@@ -106,7 +106,7 @@ func (s sqlite3) CurrentDatabase() (name string) {
 	return
 }
 
-func (sqlite3) FormateDate(e *expr, format string) *expr {
+func (sqlite3) FormatDate(e *expr, format string) *expr {
 	mapping := map[rune]string{
 		'y': "%Y",
 		'm': "%m",

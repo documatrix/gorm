@@ -175,7 +175,7 @@ func (s mysql) BuildForeignKeyName(tableName, field, dest string) string {
 	return fmt.Sprintf("%s%x", string(destRunes), bs)
 }
 
-func (mysql) FormateDate(e *expr, format string) *expr {
+func (mysql) FormatDate(e *expr, format string) *expr {
 	mapping := map[rune]string{
 		'y': "%Y",
 		'm': "%m",
@@ -188,6 +188,6 @@ func (mysql) FormateDate(e *expr, format string) *expr {
 	}
 	parsedFormat := parseDateFormat(format, mapping)
 
-	e.expr = "(DATE_FORMAT(" + e.expr + ", " + parsedFormat + "))"
+	e.expr = "(DATE_FORMAT(" + e.expr + ", '" + parsedFormat + "'))"
 	return e
 }
