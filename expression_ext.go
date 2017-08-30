@@ -158,6 +158,10 @@ func (e *LExpr) Sum() string {
 	return "SUM(" + e.expr + ")"
 }
 
+func (e *LExpr) Count() string {
+	return "COUNT(" + e.expr + ")"
+}
+
 func (e *LExpr) In(values ...interface{}) *expr {
 	// NOTE: Maybe there is a better way to do this? :)
 	if len(values) == 1 {
