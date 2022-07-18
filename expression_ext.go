@@ -120,7 +120,7 @@ func (db *DB) QT(model interface{}) string {
 }
 
 func (e *expr) operator(operator string, value interface{}) *expr {
-	if value == nil {
+	if isNull(value) {
 		e.expr = "(" + e.expr + " " + operator + " )"
 		return e
 	}
@@ -279,8 +279,16 @@ func (e *expr) NotLike(value interface{}) *expr {
 	return e.operator("NOT LIKE", value)
 }
 
+func isOracle() bool {
+	return true // TODO :'(
+}
+
+func isNull(value interface{}) bool {
+	return value == nil || (isOracle() && value == "")
+}
+
 func (e *expr) Eq(value interface{}) *expr {
-	if value == nil {
+	if isNull(value) {
 		return e.operator("IS NULL", value)
 	} else if val := reflect.ValueOf(value); val.Kind() == reflect.Ptr && val.IsNil() {
 		return e.operator("IS NULL", nil)
@@ -290,7 +298,7 @@ func (e *expr) Eq(value interface{}) *expr {
 }
 
 func (e *expr) Neq(value interface{}) *expr {
-	if value == nil {
+	if isNull(value) {
 		return e.operator("IS NOT NULL", value)
 	}
 
