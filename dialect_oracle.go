@@ -211,10 +211,18 @@ func (oracle) ConvertSQLVar(value interface{}) interface{} {
 			return 1
 		}
 		return 0
-	} else if kind == reflect.Int && t.Name() != "int" {
+	} else if (kind == reflect.Int && t.Name() != "int") ||
+		(kind == reflect.Int8 && t.Name() != "int8") ||
+		(kind == reflect.Int16 && t.Name() != "int16") ||
+		(kind == reflect.Int32 && t.Name() != "int32") ||
+		(kind == reflect.Int64 && t.Name() != "int64") {
 		v := reflect.ValueOf(value)
 		return v.Int()
-	} else if kind == reflect.Uint && t.Name() != "uint" {
+	} else if (kind == reflect.Uint && t.Name() != "uint") ||
+		(kind == reflect.Uint8 && t.Name() != "uint8") ||
+		(kind == reflect.Uint16 && t.Name() != "uint16") ||
+		(kind == reflect.Uint32 && t.Name() != "uint32") ||
+		(kind == reflect.Uint64 && t.Name() != "uint64") {
 		v := reflect.ValueOf(value)
 		return v.Uint()
 	}
