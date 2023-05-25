@@ -1,6 +1,7 @@
 package gorm
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -551,6 +552,12 @@ func (s *DB) WrapInTx(f func(tx *DB) error) (err error) {
 
 	// Create a channel to stop the ping goroutine.
 	stopTxPing := make(chan bool)
+	// Get the database connection for the transaction.
+	txConn, err := tx.DB().Conn(context.Background())
+	if err != nil {
+		return fmt.Errorf("Could not get database connection for transaction: %w", err)
+	}
+
 	// Start a goroutine that pings the database connection for a keep-alive.
 	go func() {
 		for {
@@ -560,16 +567,18 @@ func (s *DB) WrapInTx(f func(tx *DB) error) (err error) {
 				return
 			// .. otherwise ping the database connection every 10 seconds.
 			case <-time.After(10 * time.Second):
-				err := tx.DB().Ping()
-				if err != nil {
-					tx.AddError(
-						fmt.Errorf(
-							"Could not ping database connection for transaction: %w",
-							err,
-						),
-					)
+				if txConn != nil {
+					err := txConn.PingContext(context.Background())
+					if err != nil {
+						tx.AddError(
+							fmt.Errorf(
+								"Could not ping database connection for transaction: %w",
+								err,
+							),
+						)
 
-					return
+						return
+					}
 				}
 			}
 		}
