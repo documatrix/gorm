@@ -1,6 +1,7 @@
 package gorm
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -516,6 +517,30 @@ func (s *DB) Begin() *DB {
 	return c
 }
 
+func (s *DB) BeginFancy() (*DB, *sql.Conn) {
+	var conn *sql.Conn
+	var err error
+
+	c := s.clone()
+
+	if db, ok := c.db.(sqlDb); ok && db != nil {
+		conn, err = c.DB().Conn(context.Background())
+		if err != nil {
+			c.AddError(err)
+
+			return c, nil
+		}
+
+		tx, err := conn.BeginTx(context.Background(), nil)
+		c.db = interface{}(tx).(SQLCommon)
+		c.AddError(err)
+	} else {
+		c.AddError(ErrCantStartTransaction)
+	}
+
+	return c, conn
+}
+
 // Commit commit a transaction
 func (s *DB) Commit() *DB {
 	if db, ok := s.db.(sqlTx); ok && db != nil {
@@ -543,8 +568,17 @@ func (s *DB) WrapInTx(f func(tx *DB) error) (err error) {
 		return f(s)
 	}
 
+	// sConn, err := s.DB().Conn(context.Background())
+	// if err != nil {
+	// 	return fmt.Errorf("Could not get database connection: %w", err)
+	// }
+
+	// defer sConn.Close()
+
+	// s.db
+
 	// Lets start a new transaction
-	tx := s.Begin()
+	tx, conn := s.BeginFancy()
 	if err = tx.Error; err != nil {
 		return err
 	}
@@ -572,7 +606,7 @@ func (s *DB) WrapInTx(f func(tx *DB) error) (err error) {
 			// .. otherwise ping the database connection every 10 seconds.
 			case <-time.After(10 * time.Second):
 				// if s != nil && s.DB() != nil {
-				err := s.DB().Ping()
+				err := conn.PingContext(context.Background())
 				if err != nil {
 					tx.AddError(
 						fmt.Errorf(
@@ -597,9 +631,13 @@ func (s *DB) WrapInTx(f func(tx *DB) error) (err error) {
 				if err == nil {
 					err = rollbackErr
 				} else {
-					err = fmt.Errorf("Transacton code and rollback failed: %s; %s", err, rollbackErr)
+					err = fmt.Errorf("Transaction code and rollback failed: %s; %s", err, rollbackErr)
 				}
 			}
+		}
+
+		if conn != nil {
+			err = conn.Close()
 		}
 	}()
 
