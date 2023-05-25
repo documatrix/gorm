@@ -571,19 +571,19 @@ func (s *DB) WrapInTx(f func(tx *DB) error) (err error) {
 				return
 			// .. otherwise ping the database connection every 10 seconds.
 			case <-time.After(10 * time.Second):
-				if s != nil && s.DB() != nil {
-					err := s.DB().Ping()
-					if err != nil {
-						tx.AddError(
-							fmt.Errorf(
-								"Could not ping database connection for transaction: %w",
-								err,
-							),
-						)
+				// if s != nil && s.DB() != nil {
+				err := s.DB().Ping()
+				if err != nil {
+					tx.AddError(
+						fmt.Errorf(
+							"Could not ping database connection for transaction: %w",
+							err,
+						),
+					)
 
-						return
-					}
+					return
 				}
+				// }
 			}
 		}
 	}()
