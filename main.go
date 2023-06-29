@@ -29,7 +29,7 @@ type DB struct {
 	dialect       Dialect
 	singularTable bool
 
-	aftertCommitCallbacks []func(db *DB)
+	afterCommitCallbacks []func(db *DB)
 }
 
 // Open initialize a new db connection, need to import driver first, e.g:
@@ -542,7 +542,7 @@ func (s *DB) Rollback() *DB {
 // If no transaction is currently running, it will be invoked immediately
 func (s *DB) AfterCommit(f func(db *DB)) {
 	if db, ok := s.db.(sqlTx); ok && db != nil {
-		s.aftertCommitCallbacks = append(s.aftertCommitCallbacks, f)
+		s.afterCommitCallbacks = append(s.afterCommitCallbacks, f)
 	} else {
 		f(s)
 	}
@@ -576,8 +576,8 @@ func (s *DB) WrapInTx(f func(tx *DB) error) (err error) {
 		if err == nil {
 			err = tx.Commit().Error
 			if err == nil {
-				for i := len(tx.aftertCommitCallbacks) - 1; i >= 0; i-- {
-					tx.aftertCommitCallbacks[i](s)
+				for i := len(tx.afterCommitCallbacks) - 1; i >= 0; i-- {
+					tx.afterCommitCallbacks[i](s)
 				}
 			}
 		}
