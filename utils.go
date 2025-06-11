@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"runtime"
 	"runtime/debug"
 	"strings"
 	"sync"
@@ -175,6 +176,16 @@ func toQueryValues(values [][]interface{}) (results []interface{}) {
 }
 
 func fileWithLineNum() string {
+	for i := 2; i < 15; i++ {
+		_, file, line, ok := runtime.Caller(i)
+		if ok && (!goSrcRegexp.MatchString(file) || goTestRegexp.MatchString(file)) {
+			return fmt.Sprintf("%v:%v", file, line)
+		}
+	}
+	return ""
+}
+
+func fullStackTrace() string {
 	return fmt.Sprintf("Stack trace:\n%s", debug.Stack())
 }
 
