@@ -148,13 +148,9 @@ func (s *DB) SetLogWriter(log LogWriter) {
 	s.logger = Logger{log}
 }
 
-// LogMode set log mode, `true` for detailed logs, `false` for no log, default, will only print error logs
+// SetDebugFullStackTrace set logFullStacktrace mode, `true` for full stack traces.
 func (s *DB) SetDebugFullStackTrace(enable bool) *DB {
-	if enable {
-		s.logFullStacktrace = true
-	} else {
-		s.logFullStacktrace = false
-	}
+	s.logFullStacktrace = enable
 	return s
 }
 
