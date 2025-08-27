@@ -90,3 +90,22 @@ func TestMissingQueryParameters(t *testing.T) {
 		require.Contains(t, err.Error(), "not enough args to execute query: want 1 got 0")
 	}
 }
+
+func TestSpecialSelectStatements(t *testing.T) {
+	query := "SELECT '?'"
+	args := []interface{}{}
+
+	rows, err := DB.Raw(query, args...).Rows()
+	require.NoError(t, err)
+
+	defer rows.Close()
+
+	var result string
+	if rows.Next() {
+		if err := rows.Scan(&result); err != nil {
+			t.Errorf("Failed to scan row: %v", err)
+		}
+	}
+
+	require.Equal(t, "?", result)
+}
