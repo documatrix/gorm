@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jinzhu/gorm"
+	"github.com/stretchr/testify/require"
 )
 
 func NameIn1And2(d *gorm.DB) *gorm.DB {
@@ -76,5 +77,16 @@ func TestFailedValuer(t *testing.T) {
 		t.Errorf("There should be an error should happen when insert data")
 	} else if !strings.HasPrefix(err.Error(), "Should not start with") {
 		t.Errorf("The error should be returned from Valuer, but get %v", err)
+	}
+}
+
+func TestMissingQueryParameters(t *testing.T) {
+	query := "SELECT * FROM users where name = ?"
+	args := []interface{}{}
+
+	if _, err := DB.Raw(query, args...).Rows(); err == nil {
+		t.Errorf("There should be an error should happen when query data")
+	} else {
+		require.Contains(t, err.Error(), "not enough args to execute query: want 1 got 0")
 	}
 }

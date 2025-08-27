@@ -198,10 +198,9 @@ func TestNestedPreload1Error(t *testing.T) {
 	}
 
 	var got Level3
-	if err := DB.Preload("Level2").Preload("Level2.Level1", "unknown_column=10").Find(&got).Error; err == nil {
+	if err := DB.Preload("Level2", "unknown_column=10").Preload("Level2.Level1").Find(&got).Error; err == nil {
 		t.Error("Expected error but got nil")
 	}
-
 }
 
 func TestNestedPreload2(t *testing.T) {
@@ -783,6 +782,7 @@ func TestNestedPreload11(t *testing.T) {
 	levelB3 := &LevelB3{
 		Value:     "bar",
 		LevelB1ID: sql.NullInt64{Valid: true, Int64: int64(levelB1.ID)},
+		LevelB2s:  []*LevelB2{},
 	}
 	if err := DB.Create(levelB3).Error; err != nil {
 		t.Error(err)
