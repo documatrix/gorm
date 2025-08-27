@@ -672,6 +672,11 @@ func (scope *Scope) buildCondition(clause map[string]interface{}, include bool) 
 	i := 0
 	for _, s := range str {
 		if s == '?' {
+			if i >= len(replacements) {
+				scope.Err(fmt.Errorf("not enough replacements for query: %v", str))
+				return
+			}
+
 			buff.WriteString(replacements[i])
 			i++
 		} else {
