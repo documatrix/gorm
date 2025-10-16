@@ -56,12 +56,16 @@ func preloadCallback(scope *Scope) {
 
 					switch field.Relationship.Kind {
 					case "has_one":
+						fmt.Printf("preload %q (ho)\n", preloadKey)
 						currentScope.handleHasOnePreload(field, currentPreloadConditions)
 					case "has_many":
+						fmt.Printf("preload %q (hm)\n", preloadKey)
 						currentScope.handleHasManyPreload(field, currentPreloadConditions)
 					case "belongs_to":
+						fmt.Printf("preload %q (bt)\n", preloadKey)
 						currentScope.handleBelongsToPreload(field, currentPreloadConditions)
 					case "many_to_many":
+						fmt.Printf("preload %q (mtm)\n", preloadKey)
 						currentScope.handleManyToManyPreload(field, currentPreloadConditions)
 					default:
 						scope.Err(errors.New("unsupported relation"))
@@ -72,6 +76,7 @@ func preloadCallback(scope *Scope) {
 				}
 
 				if !preloadedMap[preloadKey] {
+					fmt.Printf("object not preloaded: %q\n", preloadKey)
 					scope.Err(fmt.Errorf("can't preload field %s for %s", preloadField, currentScope.GetModelStruct().ModelType))
 					return
 				}
