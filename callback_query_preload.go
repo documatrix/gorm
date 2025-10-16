@@ -157,6 +157,7 @@ func (scope *Scope) handleHasOnePreload(field *Field, conditions []interface{}) 
 	}
 
 	results := makeSlice(field.Struct.Type)
+	fmt.Printf("query: %q, %+v\n", query, values)
 	scope.Err(preloadDB.Where(query, values...).Find(results, preloadConditions...).Error)
 
 	// assign find results
@@ -233,6 +234,7 @@ func (scope *Scope) handleHasManyPreload(field *Field, conditions []interface{})
 		}
 
 		results := makeSlice(field.Struct.Type)
+		fmt.Printf("query: %q, %+v\n", query, values)
 		scope.Err(preloadDB.Where(query, values...).Find(results, preloadConditions...).Error)
 
 		// assign find results
