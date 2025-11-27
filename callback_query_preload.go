@@ -349,82 +349,142 @@ func (scope *Scope) handleManyToManyPreload(field *Field, conditions []interface
 		sourceKeys = append(sourceKeys, key.DBName)
 	}
 
-	// preload conditions
-	preloadDB, preloadConditions := scope.generatePreloadDBWithConditions(conditions)
-
-	// generate query with join table
-	newScope := scope.New(reflect.New(fieldType).Interface())
-	preloadDB = preloadDB.Table(newScope.TableName()).Model(newScope.Value)
-
-	if len(preloadDB.search.selects) == 0 {
-		preloadDB = preloadDB.Select("*")
-	}
-
-	preloadDB = joinTableHandler.JoinWith(joinTableHandler, preloadDB, scope.Value)
-
-	// preload inline conditions
-	if len(preloadConditions) > 0 {
-		preloadDB = preloadDB.Where(preloadConditions[0], preloadConditions[1:]...)
-	}
-
-	rows, err := preloadDB.Rows()
-
-	if scope.Err(err) != nil {
-		return
-	}
-	defer rows.Close()
-
-	columns, _ := rows.Columns()
-	for rows.Next() {
-		var (
-			elem   = reflect.New(fieldType).Elem()
-			fields = scope.New(elem.Addr().Interface()).Fields()
-		)
-
-		// register foreign keys in join tables
-		var joinTableFields []*Field
-		for _, sourceKey := range sourceKeys {
-			joinTableFields = append(joinTableFields, &Field{StructField: &StructField{DBName: sourceKey, IsNormal: true}, Field: reflect.New(foreignKeyType).Elem()})
-		}
-
-		scope.scan(rows, columns, append(fields, joinTableFields...))
-
-		scope.New(elem.Addr().Interface()).
-			InstanceSet("gorm:skip_query_callback", true).
-			callCallbacks(scope.db.parent.callbacks.queries)
-
-		var foreignKeys = make([]interface{}, len(sourceKeys))
-		// generate hashed forkey keys in join table
-		for idx, joinTableField := range joinTableFields {
-			if !joinTableField.Field.IsNil() {
-				foreignKeys[idx] = joinTableField.Field.Elem().Interface()
-			}
-		}
-		hashedSourceKeys := toString(foreignKeys)
-
-		if isPtr {
-			linkHash[hashedSourceKeys] = append(linkHash[hashedSourceKeys], elem.Addr())
-		} else {
-			linkHash[hashedSourceKeys] = append(linkHash[hashedSourceKeys], elem)
-		}
-	}
-
-	if err := rows.Err(); err != nil {
-		scope.Err(err)
-	}
-
-	// assign find results
-	var (
-		indirectScopeValue = scope.IndirectValue()
-		fieldsSourceMap    = map[string][]reflect.Value{}
-		foreignFieldNames  = []string{}
-	)
-
+	// get source foreign key field names
+	var foreignFieldNames []string
 	for _, dbName := range relation.ForeignFieldNames {
 		if field, ok := scope.FieldByName(dbName); ok {
 			foreignFieldNames = append(foreignFieldNames, field.Name)
 		}
 	}
+
+	// get all source foreign key values
+	indirectScopeValue := scope.IndirectValue()
+	var sourceForeignKeys []interface{}
+	if indirectScopeValue.Kind() == reflect.Slice {
+		for j := 0; j < indirectScopeValue.Len(); j++ {
+			object := indirect(indirectScopeValue.Index(j))
+			sourceForeignKeys = append(sourceForeignKeys, getValueFromFields(object, foreignFieldNames))
+		}
+	} else if indirectScopeValue.IsValid() {
+		sourceForeignKeys = append(sourceForeignKeys, getValueFromFields(indirectScopeValue, foreignFieldNames))
+	}
+
+	if len(sourceForeignKeys) == 0 {
+		return
+	}
+
+	// deduplicate source foreign keys to avoid redundant queries
+	uniqueSourceKeysMap := map[string]bool{}
+	for _, key := range sourceForeignKeys {
+		uniqueSourceKeysMap[toString(key)] = true
+	}
+
+	uniqueSourceKeyStrings := make([]string, 0, len(uniqueSourceKeysMap))
+	for key := range uniqueSourceKeysMap {
+		uniqueSourceKeyStrings = append(uniqueSourceKeyStrings, key)
+	}
+
+	// preload conditions
+	preloadDB, preloadConditions := scope.generatePreloadDBWithConditions(conditions)
+
+	// need to query relations in chunk of 2000
+	// to avoid exceeding the mssql parameter limit of 2100
+	chunkSize := 2000
+	for chunkIdx := 0; chunkIdx < len(uniqueSourceKeyStrings); chunkIdx += chunkSize {
+		var sourceKeyChunk []string
+		if chunkSize > len(uniqueSourceKeyStrings)-chunkIdx {
+			sourceKeyChunk = uniqueSourceKeyStrings[chunkIdx:]
+		} else {
+			sourceKeyChunk = uniqueSourceKeyStrings[chunkIdx : chunkIdx+chunkSize]
+		}
+
+		// create a temporary slice containing only records in this chunk
+		chunkSourceKeysMap := map[string]bool{}
+		for _, key := range sourceKeyChunk {
+			chunkSourceKeysMap[key] = true
+		}
+
+		var chunkSourceValue reflect.Value
+		if indirectScopeValue.Kind() == reflect.Slice {
+			chunkSourceValue = reflect.MakeSlice(indirectScopeValue.Type(), 0, len(sourceKeyChunk))
+			for j := 0; j < indirectScopeValue.Len(); j++ {
+				object := indirect(indirectScopeValue.Index(j))
+				key := toString(getValueFromFields(object, foreignFieldNames))
+				if chunkSourceKeysMap[key] {
+					chunkSourceValue = reflect.Append(chunkSourceValue, indirectScopeValue.Index(j))
+				}
+			}
+		} else {
+			chunkSourceValue = reflect.ValueOf(scope.Value)
+		}
+
+		// generate query with join table for this chunk
+		newScope := scope.New(reflect.New(fieldType).Interface())
+		chunkPreloadDB := preloadDB.Table(newScope.TableName()).Model(newScope.Value)
+
+		if len(chunkPreloadDB.search.selects) == 0 {
+			chunkPreloadDB = chunkPreloadDB.Select("*")
+		}
+
+		chunkPreloadDB = joinTableHandler.JoinWith(joinTableHandler, chunkPreloadDB, chunkSourceValue.Interface())
+
+		// preload inline conditions
+		if len(preloadConditions) > 0 {
+			chunkPreloadDB = chunkPreloadDB.Where(preloadConditions[0], preloadConditions[1:]...)
+		}
+
+		rows, err := chunkPreloadDB.Rows()
+
+		if scope.Err(err) != nil {
+			return
+		}
+
+		columns, _ := rows.Columns()
+		for rows.Next() {
+			var (
+				elem   = reflect.New(fieldType).Elem()
+				fields = scope.New(elem.Addr().Interface()).Fields()
+			)
+
+			// register foreign keys in join tables
+			var joinTableFields []*Field
+			for _, sourceKey := range sourceKeys {
+				joinTableFields = append(joinTableFields, &Field{StructField: &StructField{DBName: sourceKey, IsNormal: true}, Field: reflect.New(foreignKeyType).Elem()})
+			}
+
+			scope.scan(rows, columns, append(fields, joinTableFields...))
+
+			scope.New(elem.Addr().Interface()).
+				InstanceSet("gorm:skip_query_callback", true).
+				callCallbacks(scope.db.parent.callbacks.queries)
+
+			var foreignKeys = make([]interface{}, len(sourceKeys))
+			// generate hashed forkey keys in join table
+			for idx, joinTableField := range joinTableFields {
+				if !joinTableField.Field.IsNil() {
+					foreignKeys[idx] = joinTableField.Field.Elem().Interface()
+				}
+			}
+			hashedSourceKeys := toString(foreignKeys)
+
+			if isPtr {
+				linkHash[hashedSourceKeys] = append(linkHash[hashedSourceKeys], elem.Addr())
+			} else {
+				linkHash[hashedSourceKeys] = append(linkHash[hashedSourceKeys], elem)
+			}
+		}
+
+		if err := rows.Err(); err != nil {
+			scope.Err(err)
+		}
+
+		rows.Close()
+	}
+
+	// assign find results
+	var (
+		fieldsSourceMap = map[string][]reflect.Value{}
+	)
 
 	if indirectScopeValue.Kind() == reflect.Slice {
 		for j := 0; j < indirectScopeValue.Len(); j++ {
