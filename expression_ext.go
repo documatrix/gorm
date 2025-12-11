@@ -535,11 +535,11 @@ func (e *expr) in(operator string, values ...interface{}) *expr {
 			e.args = append(e.args, vals...)
 			return e
 		}
-		if vexpr, ok := values[0].(*expr); ok {
-			escapedVExpr := strings.TrimPrefix(vexpr.expr, "(")
-			escapedVExpr = strings.TrimSuffix(escapedVExpr, ")")
 
-			e.expr = "(" + e.expr + operator + " IN (" + escapedVExpr + "))"
+		// Case: IN (subquery expr)
+		if vexpr, ok := values[0].(*expr); ok {
+			escaped := stripOuterParens(vexpr.expr)
+			e.expr = "(" + e.expr + operator + " IN (" + escaped + "))"
 			e.args = append(e.args, vexpr.args...)
 			return e
 		}
@@ -553,6 +553,43 @@ func (e *expr) in(operator string, values ...interface{}) *expr {
 	e.expr = "(" + e.expr + operator + " IN (" + strings.Join(qm, ",") + "))"
 	e.args = append(e.args, values...)
 	return e
+}
+
+// stripOuterParens removes exactly one pair of outer parentheses *only if*
+// the entire expression is wrapped by this outer pair AND the parentheses are balanced.
+// If not, the string is returned unchanged.
+func stripOuterParens(s string) string {
+	s = strings.TrimSpace(s)
+	if len(s) < 2 || s[0] != '(' || s[len(s)-1] != ')' {
+		return s
+	}
+
+	depth := 0
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case '(':
+			depth++
+		case ')':
+			depth--
+			// If depth reaches 0 before the last character,
+			// then the outer parentheses do NOT wrap the entire expression.
+			if depth == 0 && i != len(s)-1 {
+				return s
+			}
+			// Negative depth → invalid parentheses
+			if depth < 0 {
+				return s
+			}
+		}
+	}
+
+	// Must end exactly at depth == 0 to be valid
+	if depth == 0 {
+		// Strip exactly one pair of outer parentheses
+		return strings.TrimSpace(s[1 : len(s)-1])
+	}
+
+	return s
 }
 
 func (e *expr) In(values ...interface{}) *expr {
