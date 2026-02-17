@@ -180,6 +180,11 @@ func (s *DB) HasBlockGlobalUpdate() bool {
 	return s.blockGlobalUpdate
 }
 
+// DebugEnabled returns true if debug mode is enabled
+func (s *DB) DebugEnabled() bool {
+	return s.logMode == 2
+}
+
 // SingularTable use singular table by default
 func (s *DB) SingularTable(enable bool) {
 	modelStructsMap = newModelStructsMap()
