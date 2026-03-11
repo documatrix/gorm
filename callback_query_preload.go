@@ -247,7 +247,7 @@ func (scope *Scope) handleHasManyPreload(field *Field, conditions []interface{})
 				f := object.FieldByName(field.Name)
 				if results, ok := preloadMap[toString(objectRealValue)]; ok {
 					f.Set(reflect.Append(f, results...))
-				} else {
+				} else if i == 0 {
 					f.Set(reflect.MakeSlice(f.Type(), 0, 0))
 				}
 			}
