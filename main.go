@@ -456,6 +456,11 @@ func (s *DB) Save(value interface{}) *DB {
 	if !scope.PrimaryKeyZero() {
 		newDB := scope.callCallbacks(s.parent.callbacks.updates).db
 		if newDB.Error == nil && newDB.RowsAffected == 0 {
+			if ignore, ok := scope.Get("gorm:ignore_save_rows_affected"); ok {
+				if v, ok := ignore.(bool); ok && v {
+					return newDB
+				}
+			}
 			return s.New().FirstOrCreate(value)
 		}
 		return newDB
