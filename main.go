@@ -248,6 +248,15 @@ func (s *DB) Offset(offset interface{}) *DB {
 	return s.clone().search.Offset(offset).db
 }
 
+// Options appends MSSQL query hints that are emitted as `OPTION (opt1, opt2, ...)`
+// at the end of the generated SELECT/UPDATE/DELETE statement. Multiple calls
+// accumulate options. On non-mssql dialects this is a no-op.
+//
+//	db.Order("id").Options("FORCE ORDER", "MAXDOP 1").Find(&out)
+func (s *DB) Options(options ...string) *DB {
+	return s.clone().search.Options(options...).db
+}
+
 // Order specify order when retrieve records from database, set reorder to `true` to overwrite defined conditions
 //
 //	db.Order("name DESC")
