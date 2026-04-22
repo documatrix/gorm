@@ -2,6 +2,7 @@ package gorm
 
 import (
 	"fmt"
+	"strings"
 )
 
 type search struct {
@@ -24,6 +25,7 @@ type search struct {
 	raw              bool
 	Unscoped         bool
 	ignoreOrderQuery bool
+	options          []string
 }
 
 type searchPreload struct {
@@ -89,6 +91,16 @@ func (s *search) Limit(limit interface{}) *search {
 
 func (s *search) Offset(offset interface{}) *search {
 	s.offset = offset
+	return s
+}
+
+func (s *search) Options(options ...string) *search {
+	for _, opt := range options {
+		opt = strings.TrimSpace(opt)
+		if opt != "" {
+			s.options = append(s.options, opt)
+		}
+	}
 	return s
 }
 

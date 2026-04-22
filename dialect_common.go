@@ -155,6 +155,11 @@ func (commonDialect) SelectFromDummyTable() string {
 	return ""
 }
 
+func (commonDialect) OptionsSQL(options []string) string {
+	// Most dialects don't support query hints/options.
+	return ""
+}
+
 func (commonDialect) LastInsertIDReturningSuffix(tableName, columnName string) string {
 	return ""
 }
