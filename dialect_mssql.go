@@ -176,6 +176,13 @@ func (mssql) SelectFromDummyTable() string {
 	return ""
 }
 
+func (mssql) OptionsSQL(options []string) string {
+	if len(options) == 0 {
+		return ""
+	}
+	return " OPTION (" + strings.Join(options, ", ") + ")"
+}
+
 func (mssql) LastInsertIDOutputInterstitial(tableName, columnName string, columns []string) string {
 	if len(columns) == 0 {
 		// No OUTPUT to query

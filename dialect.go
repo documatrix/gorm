@@ -37,6 +37,9 @@ type Dialect interface {
 
 	// LimitAndOffsetSQL return generated SQL with Limit and Offset, as mssql has special case
 	LimitAndOffsetSQL(limit, offset interface{}) string
+	// OptionsSQL return generated SQL for query options/hints. Most dialects don't support
+	// this and should return an empty string. MSSQL returns " OPTION (opt1, opt2, ...)".
+	OptionsSQL(options []string) string
 	// SelectFromDummyTable return select values, for most dbs, `SELECT values` just works, mysql needs `SELECT value FROM DUAL`
 	SelectFromDummyTable() string
 	// LastInsertIdReturningSuffix most dbs support LastInsertId, but postgres needs to use `RETURNING`
