@@ -158,3 +158,15 @@ func (postgres) FormatDate(e *expr, format string) *expr {
 	e.expr = "(to_char(" + e.expr + ", '" + parsedFormat + "'))"
 	return e
 }
+
+func (postgres) DefaultValueOf(fieldKind reflect.Kind, value string) string {
+	if fieldKind == reflect.Bool {
+		switch value {
+		case "0":
+			return "false"
+		case "1":
+			return "true"
+		}
+	}
+	return value
+}

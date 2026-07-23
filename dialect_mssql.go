@@ -200,6 +200,18 @@ func (mssql) DefaultValueStr() string {
 	return "DEFAULT VALUES"
 }
 
+func (mssql) DefaultValueOf(fieldKind reflect.Kind, value string) string {
+	if fieldKind == reflect.Bool {
+		switch value {
+		case "false":
+			return "0"
+		case "true":
+			return "1"
+		}
+	}
+	return value
+}
+
 func (mssql) FormatDate(e *expr, format string) *expr {
 	mapping := map[rune]string{
 		'y': "yyyy",
