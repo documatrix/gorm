@@ -46,6 +46,9 @@ type Dialect interface {
 	LastInsertIDReturningSuffix(tableName, columnName string) string
 	// DefaultValueStr
 	DefaultValueStr() string
+	// DefaultValueOf converts a default value string to the dialect-appropriate
+	// representation for the given field kind.
+	DefaultValueOf(fieldKind reflect.Kind, value string) string
 
 	// BuildKeyName returns a valid key name (foreign key, index key) for the given table, field and reference
 	BuildKeyName(kind, tableName string, fields ...string) string
@@ -129,7 +132,7 @@ var ParseFieldStructForDialect = func(field *StructField, dialect Dialect) (fiel
 	// Default type from tag setting
 	additionalType = field.TagSettings["NOT NULL"] + " " + field.TagSettings["UNIQUE"]
 	if value, ok := field.TagSettings["DEFAULT"]; ok {
-		additionalType = additionalType + " DEFAULT " + value
+		additionalType = additionalType + " DEFAULT " + dialect.DefaultValueOf(fieldValue.Kind(), value)
 	}
 
 	return fieldValue, dataType, size, strings.TrimSpace(additionalType)
