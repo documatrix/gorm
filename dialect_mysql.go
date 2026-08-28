@@ -190,6 +190,18 @@ func (mysql) DefaultValueStr() string {
 	return "VALUES()"
 }
 
+func (mysql) DefaultValueOf(fieldKind reflect.Kind, value string) string {
+	if fieldKind == reflect.Bool {
+		switch value {
+		case "false":
+			return "0"
+		case "true":
+			return "1"
+		}
+	}
+	return value
+}
+
 func (mysql) FormatDate(e *expr, format string) *expr {
 	mapping := map[rune]string{
 		'y': "%Y",

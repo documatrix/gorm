@@ -116,6 +116,20 @@ func (db *DB) CQ(model interface{}, names ...string) string {
 	return strings.Join(columns, ", ")
 }
 
+// CQU returns quoted column names without table prefix, suitable for INSERT column lists.
+// Example: CQU(model, "ID", "Name") returns `"id", "name"` for PostgreSQL or `id`, `name` for MySQL.
+func (db *DB) CQU(model interface{}, names ...string) string {
+	columns := make([]string, 0, len(names))
+	scope := db.NewScope(model)
+
+	for _, name := range names {
+		field, _ := scope.FieldByName(name)
+		columns = append(columns, scope.Quote(field.DBName))
+	}
+
+	return strings.Join(columns, ", ")
+}
+
 func (db *DB) T(model interface{}) string {
 	scope := db.NewScope(model)
 	return scope.TableName()
@@ -600,6 +614,20 @@ func (e *expr) OrderAscExpr() *expr {
 func (e *expr) OrderDescExpr() *expr {
 	e.expr = e.expr + " DESC "
 	return e
+}
+
+func (e *expr) OrderAscNullsFirst(db *DB) string {
+	if db.Dialect().GetName() == "postgres" {
+		return e.expr + " ASC NULLS FIRST "
+	}
+	return e.expr + " ASC "
+}
+
+func (e *expr) OrderDescNullsLast(db *DB) string {
+	if db.Dialect().GetName() == "postgres" {
+		return e.expr + " DESC NULLS LAST "
+	}
+	return e.expr + " DESC "
 }
 
 func (e *expr) Or(e2 *expr) *expr {
