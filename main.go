@@ -582,7 +582,7 @@ func (s *DB) Commit() *DB {
 		// the transaction will be closed and the transaction db connection will be invalid
 		parent := s.ReturnGlobalDB()
 
-		for _, callback := range s.afterRollbackCallbacks {
+		for _, callback := range s.afterCommitCallbacks {
 			callback(parent)
 		}
 
